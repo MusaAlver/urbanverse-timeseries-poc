@@ -1,0 +1,8 @@
+window_id,forecast_shape,shape_ok,prediction_finite,valid_output,inference_seconds
+W01,"(1, 9, 24)",True,True,True,0.025259770999923603
+W03,"(1, 9, 24)",True,True,True,0.02040982999994867
+W04,"(1, 9, 24)",True,True,True,0.021056515000054787
+W05,"(1, 9, 24)",True,True,True,0.019449602999998206
+W08,"(1, 9, 24)",True,True,True,0.02028915699997924
+W09,"(1, 9, 24)",True,True,True,0.019951234000018303
+W10,"(1, 9, 24)",True,True,True,0.019574061999946935
