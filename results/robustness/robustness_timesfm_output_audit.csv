@@ -1,0 +1,8 @@
+window_id,shape_ok,point_finite,q50_finite,point_equals_q50,point_q50_max_abs_diff,valid_output,inference_seconds
+W01,True,True,True,True,0.0,True,0.9496218230000295
+W03,True,True,True,True,0.0,True,0.21088470899996992
+W04,True,True,True,True,0.0,True,0.2131641189999982
+W05,True,True,True,True,0.0,True,0.2204060889999937
+W08,True,True,True,True,0.0,True,0.22816637799996897
+W09,True,True,True,True,0.0,True,0.21739728800002922
+W10,True,True,True,True,0.0,True,0.2140896780000503
