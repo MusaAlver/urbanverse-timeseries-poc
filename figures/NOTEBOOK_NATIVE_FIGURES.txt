@@ -1,0 +1,1 @@
+Source: executed notebook image/png outputs. Files are not redrawn.
