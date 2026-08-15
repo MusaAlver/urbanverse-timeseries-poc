@@ -1,25 +1,19 @@
 # Notebooks
 
-The executed notebooks are the primary source of truth for this PoC. Reported metrics, prediction tables, and experiment plots should be traced back to these notebook runs.
+The executed notebooks are the source of the reported PoC results.
 
-## Validated workflow
+## Core PoC workflow
 
-1. `01_timesfm_inference.ipynb` — TimesFM 2.5 zero-shot inference and output validation for the fixed primary-sensor experiment; also contains the validated T4 second-sensor TimesFM run.
+1. `01_timesfm_inference.ipynb` — TimesFM 2.5 zero-shot inference for the primary traffic series; also contains the validated TimesFM run for the second sensor.
 2. `02_moirai2_inference.ipynb` — Moirai 2.0 zero-shot inference on the same primary-sensor context and forecast horizon.
-3. `03_model_comparison.ipynb` — identical-window TimesFM/Moirai comparison, MAE/RMSE calculation, prediction table, and the main comparison plot.
-4. `04_second_sensor_zero_shot.ipynb` — cleaned zero-shot comparison on sensor `717608`; the historical invalid shared-CPU TimesFM NaN attempt is excluded from the final comparison.
-5. `05_robustness_test.ipynb` — pre-specified daily-window audit, persistence baseline, seven-window robustness evaluation, aggregate comparisons, and W01/W09 uncertainty diagnostics.
+3. `03_model_comparison.ipynb` — same-window TimesFM/Moirai comparison, MAE/RMSE calculation, prediction table, and main comparison plot.
+4. `04_second_sensor_zero_shot.ipynb` — zero-shot comparison on sensor `717608` using validated model outputs, with no retraining.
 
-## Second-sensor provenance
+## Optional follow-up
 
-The clean `04` notebook combines two notebook-produced inputs:
+`05_robustness_test.ipynb` contains additional robustness and uncertainty analyses created after the core PoC. It is kept as supplementary work and is not required for the main TimesFM-vs-Moirai task.
 
-- `results/second_sensor/timesfm_predictions_sensor_717608.csv` — the validated finite TimesFM 2.5 T4 output from notebook `01`.
-- `results/second_sensor/second_sensor_model_comparison.csv` — the historical second-sensor comparison artifact containing the valid Moirai 2.0 prediction column. Its old TimesFM column is empty/invalid and is explicitly ignored by the clean final comparison cell.
-
-The clean `04` notebook then recomputes the final MAE/RMSE values and writes `second_sensor_final_comparison.csv` and `second_sensor_final_metrics.csv` from those validated columns.
-
-## Reproducibility rules
+## Reproducibility settings
 
 - Primary sensor: `773062`
 - Second sensor: `717608`
@@ -29,4 +23,6 @@ The clean `04` notebook then recomputes the final MAE/RMSE values and writes `se
 - Point forecast: q0.5 / median
 - Training or fine-tuning on METR-LA: none
 
-Raw METR-LA files and pretrained model checkpoints are not stored inside the notebooks or repository. The plots shown in the executed notebook outputs are retained as the original visual record; they are not replaced with separately redrawn scientific figures.
+The second-sensor comparison in notebook `04` uses validated notebook-produced prediction artifacts and recomputes the final MAE/RMSE comparison.
+
+Raw METR-LA files and pretrained model checkpoints are not stored in the repository.
