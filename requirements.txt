@@ -1,6 +1,10 @@
-numpy
-pandas
-matplotlib
-scikit-learn
-tables
-# Model packages will be pinned after successful Colab validation.
+# Base dependencies only.
+#
+# For the validated TimesFM 2.5 environment, install:
+#   pip install -r requirements-timesfm.txt
+#
+# For the validated Moirai 2.0 environment, install:
+#   pip install -r requirements-moirai2.txt
+#
+# The two model environments are intentionally kept separate.
+-r requirements-common.txt
