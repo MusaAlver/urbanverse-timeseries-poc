@@ -1,0 +1,3 @@
+sensor,model,version,checkpoint,forecast_type,context_length,forecast_horizon,zero_shot,mae,rmse
+717608,TimesFM,2.5,google/timesfm-2.5-200m-pytorch,q=0.5 median,96,24,True,1.3664974586042788,2.5877714638151175
+717608,Moirai,2.0,Salesforce/moirai-2.0-R-small,q=0.5 median,96,24,True,1.3389484920198964,2.5547464286626194
