@@ -1,0 +1,2 @@
+model,n_windows,mean_mae,std_mae,median_mae,mean_rmse,std_rmse,median_rmse
+Persistence,7,4.595698696145123,4.0624563849686615,2.203125,5.90121225215664,4.912133838391981,3.081077649208583
