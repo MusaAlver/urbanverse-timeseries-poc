@@ -10,6 +10,15 @@ The executed notebooks are the primary source of truth for this PoC. Reported me
 4. `04_second_sensor_zero_shot.ipynb` — cleaned zero-shot comparison on sensor `717608`; the historical invalid shared-CPU TimesFM NaN attempt is excluded from the final comparison.
 5. `05_robustness_test.ipynb` — pre-specified daily-window audit, persistence baseline, seven-window robustness evaluation, aggregate comparisons, and W01/W09 uncertainty diagnostics.
 
+## Second-sensor provenance
+
+The clean `04` notebook combines two notebook-produced inputs:
+
+- `results/second_sensor/timesfm_predictions_sensor_717608.csv` — the validated finite TimesFM 2.5 T4 output from notebook `01`.
+- `results/second_sensor/second_sensor_model_comparison.csv` — the historical second-sensor comparison artifact containing the valid Moirai 2.0 prediction column. Its old TimesFM column is empty/invalid and is explicitly ignored by the clean final comparison cell.
+
+The clean `04` notebook then recomputes the final MAE/RMSE values and writes `second_sensor_final_comparison.csv` and `second_sensor_final_metrics.csv` from those validated columns.
+
 ## Reproducibility rules
 
 - Primary sensor: `773062`
