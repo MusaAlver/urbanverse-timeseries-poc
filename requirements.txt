@@ -1,10 +1,14 @@
-# Base dependencies only.
+# Shared analysis dependencies.
 #
-# For the validated TimesFM 2.5 environment, install:
+# The executed notebooks are the authoritative record of the validated model
+# installation/version checks. Convenience manifests are provided here:
+#
+# TimesFM 2.5:
 #   pip install -r requirements-timesfm.txt
 #
-# For the validated Moirai 2.0 environment, install:
+# Moirai 2.0:
 #   pip install -r requirements-moirai2.txt
 #
-# The two model environments are intentionally kept separate.
+# The validated TimesFM and Moirai model runs used different compatible
+# environments/devices; inference-speed comparisons are therefore excluded.
 -r requirements-common.txt
