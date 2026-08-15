@@ -2,11 +2,19 @@
 
 This project uses the METR-LA traffic benchmark as the urban time-series source.
 
-Raw benchmark files are **not committed** to this repository. For local notebook execution, place the HDF5 file at:
+Raw benchmark files are **not committed** to this repository.
+
+## Path used by the executed Colab notebooks
+
+The validated notebook runs upload the HDF5 file into the Colab runtime and read it from:
 
 ```text
-data/metr-la.h5
+/content/metr-la.h5
 ```
+
+This is the path used in notebooks `01`, `04`, and `05` when they access the raw METR-LA file.
+
+For local code outside Colab, `data/metr-la.h5` can be used as a repository-local convention and passed explicitly to the helper in `src/data_utils.py`. The executed notebooks themselves should not be described as reading that local repository path.
 
 The expected structure is a pandas HDF5 DataFrame with timestamps as rows and traffic sensors as columns.
 
