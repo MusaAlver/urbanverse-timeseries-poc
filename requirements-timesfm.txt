@@ -1,3 +1,5 @@
+# TimesFM package version matches the executed TimesFM notebooks exactly.
+# Shared analysis packages are listed separately for repository convenience.
 -r requirements-common.txt
 
 timesfm[torch]==2.0.2
