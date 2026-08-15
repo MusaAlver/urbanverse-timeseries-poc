@@ -185,14 +185,26 @@ Urban Time Series
       ↓
 TimesFM 2.5 / Moirai 2.0
       ↓
-Candidate Temporal Modeling Backbone
+Temporal Representation
       ↓
-Future Temporal Representation Integration
+Hourly Dynamics / Daily Dynamics / Longer-term Dynamics
       ↓
-Multi-scale Urban Encoder / Shared City State
+Multi-scale Urban Encoder
+      ↓
+Shared Latent City State
 ```
 
-The current PoC validates **forecasting behavior for the temporal branch only**. Integration with spatial, mobility, graph, or knowledge representations is future work and is not implemented here.
+### How this temporal branch can contribute at different UrbanVerse scales
+
+| UrbanVerse temporal layer | Potential contribution from TimesFM / Moirai |
+|---|---|
+| **Hourly dynamics** | Short-window representations can summarize recent intra-day traffic evolution and local changes over minutes to hours. The current 96-step context (8 hours at 5-minute resolution) directly demonstrates this short-horizon temporal modeling behavior. |
+| **Daily dynamics** | Repeated temporal representations from windows across a day can be organized into daily traffic-pattern features, capturing recurring within-day structure before fusion with the other UrbanVerse modalities. |
+| **Longer-term dynamics** | Temporal representations collected across multiple days or longer contexts can be aggregated into slower-changing temporal features for the multi-scale encoder. This is a future integration step; the current PoC does not claim to implement a long-horizon UrbanVerse representation layer. |
+
+In the full UrbanVerse architecture, these multi-scale temporal features are intended to be combined with **Traffic + Mobility** and **Urban Graph + Knowledge** representations inside the **Multi-scale Urban Encoder**, contributing to a **Shared Latent City State**.
+
+The current PoC validates **real zero-shot forecasting behavior for the temporal branch only**. It demonstrates that TimesFM and Moirai can take a real urban time series as input and produce real future-value predictions that can serve as evidence for choosing a temporal modeling backbone. The extraction and fusion of finalized UrbanVerse temporal latent representations are future work and are **not implemented in this PoC**.
 
 ## Notebook workflow
 
@@ -266,6 +278,7 @@ See [`data/README.md`](data/README.md) and [`notebooks/README.md`](notebooks/REA
 - [x] Persistence baseline added
 - [x] Multi-window robustness evaluation completed
 - [x] Predictive uncertainty diagnostics completed
+- [x] UrbanVerse hourly / daily / longer-term temporal-role mapping documented
 - [x] Notebooks `01`–`05` organized in GitHub
 - [x] Notebook-produced CSV outputs organized under `results/`
 - [x] Notebook-native PNG outputs organized under `figures/`
