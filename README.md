@@ -1,18 +1,16 @@
 # UrbanVerse Urban Time-Series Foundation Model PoC
 
-Zero-shot urban traffic forecasting with **TimesFM 2.5** and **Moirai 2.0** as the temporal representation branch of the UrbanVerse research framework.
+Zero-shot urban traffic forecasting with **TimesFM 2.5** and **Moirai 2.0** as candidate temporal-modeling backbones for the UrbanVerse research framework.
 
 ## Research objective
 
-This proof of concept implements the following UrbanVerse component:
+This proof of concept evaluates the following UrbanVerse branch:
 
 ```text
 Urban Time Series → Foundation Model → Temporal Urban Representation
 ```
 
-The goal is to test whether pretrained time-series foundation models can extract useful temporal dynamics from an urban signal **without training or fine-tuning on METR-LA**.
-
-This PoC intentionally remains controlled and small. It does not claim to implement the full UrbanVerse architecture, multivariate city modeling, or cross-city training.
+The current PoC tests the **zero-shot forecasting behavior** of pretrained time-series foundation models on an urban traffic signal, without training or fine-tuning on METR-LA. It does not claim to implement the full UrbanVerse architecture or to expose a finalized latent city representation.
 
 ## Experimental protocol
 
@@ -59,11 +57,11 @@ The same pretrained models were evaluated on sensor `717608` using the same date
 | TimesFM 2.5 | 1.3665 | 2.5878 |
 | Moirai 2.0 | **1.3389** | **2.5547** |
 
-Both models transferred directly to the second sensor, supporting the intended zero-shot temporal-representation use case.
+Both models transferred directly to the second sensor without retraining.
 
 ## Multi-window robustness evaluation
 
-To reduce dependence on a single forecast window, 10 consecutive daily windows were pre-specified from `2012-06-04` through `2012-06-13`, all starting at `13:30`.
+To reduce dependence on a single forecast window, 10 consecutive daily candidate windows were pre-specified from `2012-06-04` through `2012-06-13`, all starting at `13:30`.
 
 The data-quality rule was fixed before model inference:
 
@@ -101,11 +99,11 @@ Per-window wins:
 | TimesFM 2.5 | 2 / 7 | 2 / 7 |
 | Moirai 2.0 | 3 / 7 | 4 / 7 |
 
-The main robustness conclusion is therefore not that one foundation model always wins. Rather, **both pretrained models improve aggregate performance over a simple persistence baseline, while their relative strengths vary across temporal regimes**.
+The robustness result does not identify one universal winner: both pretrained models improve aggregate performance over persistence, while relative performance varies across the evaluated windows.
 
-## Predictive uncertainty analysis
+## Predictive uncertainty diagnostics
 
-For two diagnostic windows, q10–q50–q90 forecasts were reproduced from the same pretrained models and checked against the saved q0.5 forecasts.
+The executed robustness notebook also contains q10–q50–q90 diagnostics for W01 and W09.
 
 ### W01 — main evaluation window
 
@@ -114,16 +112,14 @@ For two diagnostic windows, q10–q50–q90 forecasts were reproduced from the s
 | TimesFM 2.5 | 23 / 24 = 95.8% | 15.9496 |
 | Moirai 2.0 | 22 / 24 = 91.7% | 13.3498 |
 
-### W09 — hard / stress window
+### W09 — post-hoc illustrative hard window
 
 | Model | q10–q90 empirical coverage | Mean interval width |
 |---|---:|---:|
 | TimesFM 2.5 | 18 / 24 = 75.0% | 28.0303 |
 | Moirai 2.0 | 19 / 24 = 79.2% | 26.8294 |
 
-From W01 to W09, both models substantially widen their q10–q90 intervals, yet empirical coverage decreases. This descriptive result suggests that the hard temporal regime is challenging not only for point forecasting but also for uncertainty calibration.
-
-These coverage values are **diagnostic empirical coverage on the selected windows**, not a formal calibration guarantee.
+W09 is described as a hard/stress case **post hoc**, after inspecting the robustness errors; the original candidate-window schedule itself was pre-specified. The reported coverage is descriptive empirical q10–q90 coverage on these selected windows, not a formal calibration or confidence guarantee.
 
 ## UrbanVerse connection
 
@@ -132,16 +128,14 @@ Urban Time Series
       ↓
 TimesFM 2.5 / Moirai 2.0
       ↓
-Temporal Urban Representation
+Candidate Temporal Modeling Backbone
       ↓
-Multi-scale Urban Encoder
+Future Temporal Representation Integration
       ↓
-Shared Latent City State
-      ↓
-Urban World Model
+Multi-scale Urban Encoder / Shared City State
 ```
 
-The current PoC validates the temporal branch only. In the wider UrbanVerse concept, this representation can later be combined with spatial, mobility, graph, and knowledge representations to support multi-scale urban forecasting and world-model objectives.
+The current PoC validates forecasting behavior for the temporal branch only. Integration with spatial, mobility, graph, or knowledge representations is future work and is not implemented here.
 
 ## Repository structure
 
@@ -149,11 +143,25 @@ The current PoC validates the temporal branch only. In the wider UrbanVerse conc
 urbanverse-timeseries-poc/
 ├── README.md
 ├── requirements.txt
+├── requirements-common.txt
+├── requirements-timesfm.txt
+├── requirements-moirai2.txt
 ├── data/
 │   └── README.md
 ├── notebooks/
 │   ├── README.md
+│   ├── 01_timesfm_inference.ipynb
+│   ├── 02_moirai2_inference.ipynb
+│   ├── 03_model_comparison.ipynb
+│   ├── 04_second_sensor_zero_shot.ipynb
 │   └── 05_robustness_test.ipynb
+├── results/
+│   ├── main_sensor/
+│   ├── second_sensor/
+│   ├── robustness/
+│   └── uncertainty/
+├── scripts/
+│   └── run_moirai2_robustness.py
 └── src/
     ├── __init__.py
     ├── config.py
@@ -161,16 +169,17 @@ urbanverse-timeseries-poc/
     └── metrics.py
 ```
 
-Additional validated notebooks, result CSVs, and figures are being organized into the repository as final reproducibility artifacts.
+The CSV artifacts in `results/` correspond to outputs produced by the executed notebooks. The experiment plots remain preserved in the executed notebook outputs; no separately redrawn or assistant-generated scientific figures are used as replacements.
 
 ## Reproducibility notes
 
-TimesFM and Moirai currently require different compatible environments in this PoC. They should not be forced into one shared dependency environment.
+TimesFM and Moirai require different compatible environments in this PoC and should not be forced into one shared runtime.
 
 - TimesFM 2.5 was validated on a Google Colab NVIDIA Tesla T4 runtime.
 - Moirai 2.0 was validated in an isolated environment with `uni2ts==2.0.0` and PyTorch 2.4.1 CPU.
 - Model inference is zero-shot in all reported experiments.
-- Inference speed is not compared because the two validated pipelines use different devices/environments.
+- Inference speed is not compared because the validated pipelines use different devices/environments.
+- Raw METR-LA data and pretrained model weights are not committed to the repository.
 
 ## Status
 
@@ -185,6 +194,6 @@ TimesFM and Moirai currently require different compatible environments in this P
 - [x] Persistence baseline added
 - [x] Multi-window robustness evaluation completed
 - [x] Predictive uncertainty diagnostics completed
-- [x] Robustness / uncertainty reproducibility audits completed
-- [ ] Remaining notebooks, figures, and result artifacts organized in GitHub
-- [ ] Final project-level reproducibility instructions completed
+- [x] Notebooks `01`–`05` organized in GitHub
+- [x] Notebook-produced result CSVs organized under `results/`
+- [x] Notebook-native plots preserved in executed notebook outputs
