@@ -1,6 +1,13 @@
+# Model versions match the executed Moirai notebooks exactly:
+#   torch==2.4.1+cpu
+#   uni2ts==2.0.0
+#
+# The notebooks install torch in an isolated environment with
+# --index-url https://download.pytorch.org/whl/cpu, then install Uni2TS.
+# This combined convenience manifest uses --extra-index-url so the shared
+# analysis packages can still resolve from the default Python package index.
 -r requirements-common.txt
 
-# Moirai 2.0 validated environment
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch==2.4.1+cpu
 uni2ts==2.0.0
