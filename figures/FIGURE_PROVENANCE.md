@@ -1,0 +1,1 @@
+All PNG files under this directory are intended to be byte-identical exports of the image/png outputs embedded in the executed notebooks. The notebooks remain the source of truth.
