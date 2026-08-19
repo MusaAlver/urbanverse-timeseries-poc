@@ -15,7 +15,7 @@ This repository is a **proof of concept**, not a full forecasting paper. The fin
 - **Hourly is the strongest executed scale.** Against **Seasonal Naive (24h)**, TimesFM has mean MAE `1.567` vs `2.985` and wins **8/9** windows. Moirai has mean MAE `2.218` and wins **4/9**.
 - **Flat Persistence is structurally weak at a 24-hour horizon.** Seasonal Naive reduces mean MAE from `12.563` to `2.985`, so the hourly result should not be summarized only as “87% better than persistence.”
 - **TimesFM's hourly advantage is more consistent than Moirai's.** Its largest gains occur where Seasonal Naive itself has the highest error; when the previous-day pattern is already captured well, the extra gain is much smaller.
-- **Five-minute forecasts remain weak at step-to-step motion tracking.** Longer context helps, but even 7 days of 5-minute history does not approach the executed hourly trajectory metrics.
+- **Five-minute forecasts remain weak at step-to-step motion tracking.** Longer context helps, but even 7 days of 5-minute history does not fully resolve the high-frequency trajectory problem.
 - **The original 8-hour context was a real confound, but not the whole explanation.** Most of the observed gain appears once at least one full daily cycle is visible; additional history beyond 24 hours gives smaller/model-dependent gains.
 - **Weekly is exploratory only** because the executed weekly forecast contains just two target points.
 
@@ -31,6 +31,16 @@ This repository is a **proof of concept**, not a full forecasting paper. The fin
 | Task-specific fine-tuning | None |
 | Point forecast | median / q0.5 |
 
+### Metric definitions
+
+- **MAE (Mean Absolute Error):** average absolute distance between prediction and Ground Truth. Lower is better.
+- **RMSE (Root Mean Squared Error):** error metric that penalizes larger misses more strongly because errors are squared before averaging. Lower is better.
+- **First-difference correlation:** correlation between consecutive changes in Ground Truth and consecutive changes in the forecast. Higher positive values mean better movement tracking.
+- **Directional accuracy:** fraction of consecutive steps where forecast and Ground Truth move in the same direction. `0.5` is roughly chance-level direction matching.
+- **Variability ratio:** forecast change variability divided by Ground Truth change variability. Values near `1` indicate similar fluctuation magnitude; values near `0` indicate an overly smooth forecast.
+
+The project therefore distinguishes **level tracking** (predicting approximately the right traffic-speed level) from **dynamics tracking** (following the short-term rises and falls).
+
 ## 1. Metric and alignment validation
 
 The saved primary-window MAE/RMSE values were independently recomputed on the **raw traffic-speed scale**. Context ends at `2012-06-04 21:25`, Ground Truth begins at `21:30`, and no off-by-one error was found.
@@ -43,6 +53,17 @@ The saved primary-window MAE/RMSE values were independently recomputed on the **
 The original single late-evening window is retained only as pilot provenance; the final interpretation relies on the multi-window experiments below.
 
 ![Original experiment output](figures/main_sensor/final_model_comparison_plot.png)
+
+### Additional zero-shot sensor check
+
+The same pretrained checkpoints were also applied to sensor `717608` with no task-specific training or fine-tuning.
+
+| Model | MAE | RMSE |
+|---|---:|---:|
+| TimesFM 2.5 | 1.3665 | 2.5878 |
+| Moirai 2.0 | 1.3389 | 2.5547 |
+
+This second sensor is a supporting transfer check, not the basis of the final ranking claim. The primary conclusions come from the multi-window experiments on sensor `773062`.
 
 ## 2. Multi-scale temporal dynamics
 
@@ -61,9 +82,15 @@ Raw MAE should **not** be compared across scales as if they were the same foreca
 
 ![5-minute Ground Truth vs Persistence vs foundation models](figures/experiment_outputs/5min_forecast_comparison.png)
 
+Some forecast segments visibly move in the opposite direction from Ground Truth. This is an observed limitation rather than something hidden by the point-error metrics. In the controlled 5-minute experiment below, the 8-hour TimesFM forecast has first-difference correlation `-0.128` and directional accuracy `0.504`; Moirai has `0.107` and `0.496`. In other words, **the models can estimate traffic level better than they can follow every 5-minute rise and fall**.
+
+Longer context improves this behavior but does not eliminate it: first-difference correlation rises to `0.240` for TimesFM and `0.229` for Moirai with 7 days of history. This is why the project reports trajectory metrics in addition to MAE/RMSE.
+
 ### Hourly
 
 ![Hourly Ground Truth vs Persistence vs foundation models](figures/experiment_outputs/hourly_forecast_comparison.png)
+
+At hourly resolution the trajectory result is much stronger: TimesFM reaches first-difference correlation `0.907` and directional accuracy `0.792`, while Moirai reaches `0.864` and `0.778`. The models can still disagree with Ground Truth at individual steps, but the overall rise/fall pattern is substantially better aligned than in the 5-minute case.
 
 ### Hourly with stronger baseline
 
@@ -121,7 +148,9 @@ The final PoC does not support a blanket “foundation models are better” stat
 
 > **TimesFM shows consistent added value at the executed hourly scale, including against a strong previous-day seasonal baseline. Moirai's hourly advantage is more window-dependent. At 5-minute resolution, longer historical context improves error and some shape diagnostics, but does not fully solve high-frequency trajectory tracking.**
 
-The remaining 5-minute vs hourly gap is consistent with a role for temporal aggregation/resolution, but this experiment does not isolate that factor causally.
+The visually opposite short-term movements in some 5-minute segments are therefore consistent with the measured trajectory weakness; they should not be interpreted as evidence that MAE/RMSE alone proves good dynamics tracking.
+
+The remaining 5-minute vs hourly gap is consistent with a role for temporal aggregation/resolution, but this experiment does not isolate that factor causally because resolution, history duration, and target duration differ across the multi-scale setups.
 
 ## Reproducibility
 
@@ -132,9 +161,19 @@ The remaining 5-minute vs hourly gap is consistent with a role for temporal aggr
 
 ## Limitations
 
-- Primary final experiments use one METR-LA sensor (`773062`).
+- Primary final experiments use one METR-LA sensor (`773062`); sensor `717608` is only a supporting zero-shot transfer check.
 - Five-minute and hourly executed windows are weekday-only.
 - Hourly horizons overlap and are concentrated on two days.
 - The paired context ablation uses five regimes from a single day after data-quality filtering.
 - Weekly results are visual/exploratory because only two future points are available.
+- Cross-scale comparisons are descriptive because the forecasting tasks are not identical across resolutions.
 - Results are descriptive; no statistical-significance/generalization claim is made.
+
+## Sources
+
+- **METR-LA / DCRNN data pipeline:** https://github.com/liyaguang/DCRNN
+- **TimesFM 2.5 model card:** https://huggingface.co/google/timesfm-2.5-200m-pytorch
+- **TimesFM paper:** https://arxiv.org/abs/2310.10688
+- **Moirai 2.0 model card:** https://huggingface.co/Salesforce/moirai-2.0-R-small
+- **Moirai / Uni2TS implementation:** https://github.com/SalesforceAIResearch/uni2ts
+- **Moirai paper:** https://arxiv.org/abs/2402.02592
