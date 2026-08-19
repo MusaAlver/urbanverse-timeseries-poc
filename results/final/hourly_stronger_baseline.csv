@@ -1,0 +1,5 @@
+model,mean_mae,mean_rmse,wins_vs_seasonal_naive,first_difference_correlation,directional_accuracy,variability_ratio
+Persistence,12.562973,17.273620,, , ,0.0
+Seasonal Naive (24h),2.984539,5.298002,baseline,0.795,0.758,0.849
+TimesFM 2.5,1.566580,2.233143,8/9,0.907,0.792,0.982
+Moirai 2.0,2.217805,3.403120,4/9,0.864,0.778,0.886

@@ -1,0 +1,5 @@
+scale,n_windows,persistence_mean_mae,timesfm_mean_mae,timesfm_wins_vs_persistence,moirai_mean_mae,moirai_wins_vs_persistence,notes
+5min,10,4.224826,3.463834,7,3.452817,7,weekday-only; weak step-to-step tracking
+hourly,9,12.562973,1.566580,9,2.217805,9,overlapping horizons; stronger seasonal baseline also evaluated
+daily,10,3.434306,1.302821,10,1.811918,10,5 weekday + 5 weekend origins
+weekly,1,,,,,,visual exploratory only; 2 target points

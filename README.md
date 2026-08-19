@@ -1,153 +1,129 @@
 # UrbanVerse Urban Time-Series Foundation Model PoC
 
-Zero-shot urban traffic forecasting with **TimesFM 2.5** and **Moirai 2.0** for the UrbanVerse temporal branch.
-
-## Research objective
+Zero-shot urban traffic forecasting with **TimesFM 2.5** and **Moirai 2.0** on **METR-LA** for the temporal branch of UrbanVerse.
 
 ```text
-Urban Time Series → Foundation Model → Temporal Urban Representation
+Urban Time Series -> Foundation Model -> Temporal Urban Representation
 ```
 
-This proof of concept tests two pretrained time-series foundation models on a real urban traffic series. The goal is to compare their zero-shot forecasts on the same input and show how a temporal-modeling backbone can later contribute to UrbanVerse.
+This repository is a **proof of concept**, not a full forecasting paper. The final revision focuses on five questions: are the metrics/alignment correct, do the models beat simple baselines, do point forecasts actually follow the trajectory, how does behavior change across time scales, and was the original 8-hour 5-minute context too short?
 
-## Experimental setup
+## Key findings
+
+- **Hourly is the strongest executed scale.** Against a stronger **Seasonal Naive (24h)** baseline, TimesFM has mean MAE `1.567` vs `2.985` and wins **8/9** windows. Moirai has mean MAE `2.218` and wins **4/9**.
+- **The flat Persistence baseline was structurally weak at a 24-hour horizon.** Seasonal Naive reduces mean MAE from `12.563` to `2.985`; the hourly result therefore should not be presented as a simple “87% better” claim.
+- **TimesFM's hourly advantage is more consistent than Moirai's.** TimesFM's largest gains occur where Seasonal Naive itself has the highest error; when the previous-day pattern is already strong, the extra gain is much smaller.
+- **Five-minute forecasts remain weak at step-to-step motion tracking.** Longer context helps, but even 7 days of 5-minute history does not approach the executed hourly trajectory metrics.
+- **The original 8-hour context was a real confound, but not the whole explanation.** Most of the observed gain appears once at least one full daily cycle is visible; additional history beyond 24 hours gives smaller/model-dependent gains.
+- **Weekly is exploratory only** because the executed weekly forecast contains just two target points.
+
+## Setup
 
 | Item | Setting |
 |---|---|
 | Dataset | METR-LA |
-| Urban variable | Traffic speed |
-| Sampling interval | 5 minutes |
 | Primary sensor | `773062` |
-| Second sensor | `717608` |
-| Context length | 96 observations = 8 hours |
-| Forecast horizon | 24 observations = 2 hours |
-| TimesFM checkpoint | `google/timesfm-2.5-200m-pytorch` |
-| TimesFM package | `timesfm==2.0.2` |
-| Moirai checkpoint | `Salesforce/moirai-2.0-R-small` |
-| Moirai / Uni2TS package | `uni2ts==2.0.0` |
-| Metrics | MAE, RMSE |
-| Training / fine-tuning | None |
+| Original resolution | 5 minutes |
+| TimesFM | `google/timesfm-2.5-200m-pytorch` |
+| Moirai | `Salesforce/moirai-2.0-R-small` |
+| Task-specific fine-tuning | None |
+| Point forecast | median / q0.5 |
 
-Both models receive the **same context, same ground truth, and same 24-step forecast horizon**.
+## 1. Metric and alignment validation
 
-## Main comparison — sensor `773062`
-
-- Context: `2012-06-04 13:30` → `21:25`
-- Forecast: `2012-06-04 21:30` → `23:25`
-- 96 past observations → 24 future observations
+The saved primary-window MAE/RMSE values were independently recomputed on the **raw traffic-speed scale**. Context ends at `2012-06-04 21:25`, Ground Truth begins at `21:30`, and no off-by-one error was found.
 
 | Model | MAE | RMSE |
 |---|---:|---:|
 | TimesFM 2.5 | 2.3031 | 2.9794 |
-| Moirai 2.0 | **1.6552** | **2.7551** |
+| Moirai 2.0 | 1.6552 | 2.7551 |
 
-![Ground Truth vs TimesFM 2.5 vs Moirai 2.0 on METR-LA sensor 773062](figures/main_sensor/final_model_comparison_plot.png)
+The original single late-evening window is retained only as pilot provenance; the final interpretation relies on the multi-window experiments below.
 
-Moirai 2.0 produced the lower MAE and RMSE on this evaluation window.
+## 2. Multi-scale temporal dynamics
 
-**Outputs:** [comparison notebook](notebooks/03_model_comparison.ipynb) · [main-sensor results](results/main_sensor/)
+The observed series is resampled **before** inference at each scale. Five-minute forecasts are not averaged after prediction.
 
-## Zero-shot test — second sensor `717608`
+| Scale | Context | Horizon | Windows | Persistence MAE | TimesFM MAE | Moirai MAE |
+|---|---:|---:|---:|---:|---:|---:|
+| 5-minute | 8 h | 2 h | 10 | 4.225 | 3.464 | 3.453 |
+| Hourly | 7 d | 24 h | 9 | 12.563 | **1.567** | 2.218 |
+| Daily | 28 d | 14 d | 10 | 3.434 | **1.303** | 1.812 |
+| Weekly | 8 wk | 2 wk | 1 | visual only | visual only | visual only |
 
-The same pretrained models were applied to a second METR-LA traffic sensor with **no retraining or fine-tuning**.
+Raw MAE should **not** be compared across scales as if they were the same forecasting task. The meaningful comparison is model vs baseline **within each scale**.
 
-| Model | MAE | RMSE |
-|---|---:|---:|
-| TimesFM 2.5 | 1.3665 | 2.5878 |
-| Moirai 2.0 | **1.3389** | **2.5547** |
+### 5-minute
 
-![Zero-shot comparison on second METR-LA sensor 717608](figures/second_sensor/second_sensor_comparison_plot.png)
+![5-minute forecast comparison](figures/final/5min.svg)
 
-Both models transferred directly to the second sensor. The error difference is small, while the main generalization result is that both pretrained models can be reused on another urban time series without retraining.
+### Hourly with stronger baseline
 
-**Outputs:** [second-sensor notebook](notebooks/04_second_sensor_zero_shot.ipynb) · [second-sensor results](results/second_sensor/)
+**Seasonal Naive (24h)** copies each forecast hour from the same hour one day earlier.
 
-## TimesFM vs. Moirai summary
+| Method | Mean MAE | Mean RMSE | Wins vs Seasonal Naive | First-diff corr. | Directional accuracy | Variability ratio |
+|---|---:|---:|---:|---:|---:|---:|
+| Persistence | 12.563 | 17.274 | — | — | — | 0.000 |
+| Seasonal Naive (24h) | 2.985 | 5.298 | baseline | 0.795 | 0.758 | 0.849 |
+| **TimesFM 2.5** | **1.567** | **2.233** | **8/9** | **0.907** | **0.792** | **0.982** |
+| Moirai 2.0 | 2.218 | 3.403 | 4/9 | 0.864 | 0.778 | 0.886 |
 
-| Model | Main sensor | Second sensor | Training on METR-LA |
-|---|---|---|---|
-| **TimesFM 2.5** | MAE 2.3031 / RMSE 2.9794 | MAE 1.3665 / RMSE 2.5878 | None |
-| **Moirai 2.0** | MAE 1.6552 / RMSE 2.7551 | MAE 1.3389 / RMSE 2.5547 | None |
+TimesFM has about **47.5% lower mean MAE** than Seasonal Naive. Moirai has about **25.7% lower mean MAE**, but its advantage is less consistent across windows. This remains a descriptive PoC result because the 9 hourly horizons overlap and are concentrated on 25–26 June 2012.
 
-## UrbanVerse connection
+![Hourly forecast with Seasonal Naive](figures/final/hourly_seasonal.svg)
 
-```text
-Urban Time Series
-      ↓
-TimesFM 2.5 / Moirai 2.0
-      ↓
-Temporal Representation
-      ↓
-Hourly Dynamics / Daily Dynamics / Longer-term Dynamics
-      ↓
-Multi-scale Urban Encoder
-      ↓
-Shared Latent City State
-```
+### Daily
 
-| Temporal scale | How the temporal branch can contribute |
-|---|---|
-| **Hourly dynamics** | Short traffic windows can represent recent changes over minutes and hours. The current 96-step context covers 8 hours at 5-minute resolution. |
-| **Daily dynamics** | Temporal features from repeated windows can be combined to represent recurring within-day traffic patterns. |
-| **Longer-term dynamics** | Features collected across longer contexts or multiple days can later be aggregated for slower-changing urban dynamics. |
+![Daily forecast comparison](figures/final/daily.svg)
 
-In the full UrbanVerse architecture, these temporal features can later be combined with **Traffic + Mobility** and **Urban Graph + Knowledge** representations inside the **Multi-scale Urban Encoder** and contribute to the **Shared Latent City State**.
+### Weekly — exploratory only
 
-This PoC focuses on the working temporal forecasting component; full latent-representation fusion is future work.
+Only two future points are available in the executed weekly window, so the plot is shown for completeness rather than model ranking.
 
-## Notebook workflow
+![Weekly exploratory comparison](figures/final/weekly.svg)
 
-1. [`01_timesfm_inference.ipynb`](notebooks/01_timesfm_inference.ipynb) — TimesFM 2.5 zero-shot inference.
-2. [`02_moirai2_inference.ipynb`](notebooks/02_moirai2_inference.ipynb) — Moirai 2.0 zero-shot inference on the same primary series.
-3. [`03_model_comparison.ipynb`](notebooks/03_model_comparison.ipynb) — MAE/RMSE comparison and prediction visualization.
-4. [`04_second_sensor_zero_shot.ipynb`](notebooks/04_second_sensor_zero_shot.ipynb) — second-sensor zero-shot test.
+## 3. Context-length control at fixed 5-minute resolution
 
-An additional [`05_robustness_test.ipynb`](notebooks/05_robustness_test.ipynb) is kept in the repository as optional follow-up analysis; it is not part of the core PoC scope described above.
+To control the original context mismatch, the forecast origin, 5-minute resolution, and 24-step / 2-hour target are held fixed while only the history length changes.
 
-## Repository structure
+| Model | Context | Mean MAE | First-diff corr. | Directional accuracy | Variability ratio |
+|---|---:|---:|---:|---:|---:|
+| TimesFM | 8 h | 3.385 | -0.128 | 0.504 | 0.058 |
+| TimesFM | 24 h | 2.913 | 0.103 | **0.558** | **0.503** |
+| TimesFM | 7 d | **2.560** | **0.240** | 0.549 | 0.302 |
+| Moirai | 8 h | 3.137 | 0.107 | 0.496 | 0.423 |
+| Moirai | 24 h | **2.412** | 0.176 | **0.540** | **0.509** |
+| Moirai | 7 d | 2.461 | **0.229** | 0.531 | 0.396 |
 
-```text
-urbanverse-timeseries-poc/
-├── README.md
-├── notebooks/
-│   ├── 01_timesfm_inference.ipynb
-│   ├── 02_moirai2_inference.ipynb
-│   ├── 03_model_comparison.ipynb
-│   ├── 04_second_sensor_zero_shot.ipynb
-│   └── 05_robustness_test.ipynb   # optional follow-up
-├── results/
-│   ├── main_sensor/
-│   └── second_sensor/
-├── figures/
-│   ├── main_sensor/
-│   └── second_sensor/
-├── data/
-│   └── README.md
-└── requirements*.txt
-```
+For TimesFM, mean MAE falls by about **24.4%** from 8 hours to 7 days. For Moirai, the best MAE occurs at **24 hours**; 7 days does not improve it further. Longer history helps, but 5-minute step-to-step tracking remains weak.
 
-The main result CSVs and figures come from the executed notebooks. Additional optional analysis artifacts are kept in the repository but are not part of the main PoC presentation.
+The paired quality filter leaves **5 origins**, one from each clock-time regime, but all five are from **2012-06-27**. This control is therefore descriptive and single-day.
+
+![TimesFM context-length control](figures/final/context_timesfm.svg)
+
+![Moirai context-length control](figures/final/context_moirai.svg)
+
+## Interpretation
+
+The final PoC no longer supports a blanket “foundation models are better” statement. A more defensible result is:
+
+> **TimesFM shows consistent added value at the executed hourly scale, including against a strong previous-day seasonal baseline. Moirai's hourly advantage is more window-dependent. At 5-minute resolution, longer historical context improves error and some shape diagnostics, but does not fully solve high-frequency trajectory tracking.**
+
+The remaining 5-minute vs hourly gap is consistent with a role for temporal aggregation/resolution, but this experiment does not isolate that factor causally.
 
 ## Reproducibility
 
-TimesFM and Moirai use separate compatible environments in this PoC.
+- Core inference notebooks and saved pilot provenance remain under `notebooks/` and `results/`.
+- Final consolidated summaries are committed under `results/final/`.
+- Scientific evaluation utilities are under `src/`.
+- Final Turkish interpretation: `docs/FINAL_RESULTS_TR.md`.
+- Raw `metr-la.h5` and pretrained checkpoints are intentionally not committed.
 
-- TimesFM 2.5 was validated on a Google Colab NVIDIA Tesla T4 runtime.
-- Moirai 2.0 was validated with `uni2ts==2.0.0` and PyTorch 2.4.1 CPU in an isolated environment.
-- All reported model runs are zero-shot on METR-LA.
-- Raw METR-LA data and pretrained model weights are not committed to the repository.
+## Limitations
 
-See [`data/README.md`](data/README.md) and [`notebooks/README.md`](notebooks/README.md) for setup details.
-
-## Status
-
-- [x] Single urban variable selected: traffic speed
-- [x] TimesFM inference completed
-- [x] Moirai inference completed
-- [x] Same input window and forecast horizon used
-- [x] MAE / RMSE calculated for both models
-- [x] Ground Truth / TimesFM / Moirai visualization produced
-- [x] TimesFM vs. Moirai comparison table completed
-- [x] Second-sensor zero-shot test completed
-- [x] UrbanVerse temporal-role mapping documented
-- [x] GitHub notebooks and README organized
+- Primary final experiments use one METR-LA sensor (`773062`).
+- Five-minute and hourly executed windows are weekday-only.
+- Hourly horizons overlap and are concentrated on two days.
+- The paired context ablation uses five regimes from a single day after data-quality filtering.
+- Weekly results are visual/exploratory because `n=2` future points.
+- Results are descriptive; no statistical-significance/generalization claim is made.
