@@ -16,6 +16,7 @@ This repository is a **proof of concept**, not a full forecasting paper. The fin
 - **Flat Persistence is structurally weak at a 24-hour horizon.** Seasonal Naive reduces mean MAE from `12.563` to `2.985`, so the hourly result should not be summarized only as “87% better than persistence.”
 - **TimesFM's hourly advantage is more consistent than Moirai's.** Its largest gains occur where Seasonal Naive itself has the highest error; when the previous-day pattern is already captured well, the extra gain is much smaller.
 - **Five-minute forecasts remain weak at step-to-step motion tracking.** Longer context helps, but even 7 days of 5-minute history does not fully resolve the high-frequency trajectory problem.
+- **Sharp 5-minute movements are strongly under-reacted to.** A context-calibrated abrupt-change audit finds 19 q90 future events across 8/10 windows; both models predict only a small fraction of the observed change magnitude on these events.
 - **The original 8-hour context was a real confound, but not the whole explanation.** Most of the observed gain appears once at least one full daily cycle is visible; additional history beyond 24 hours gives smaller/model-dependent gains.
 - **Weekly is exploratory only** because the executed weekly forecast contains just two target points.
 
@@ -86,6 +87,19 @@ Some forecast segments visibly move in the opposite direction from Ground Truth.
 
 Longer context improves this behavior but does not eliminate it: first-difference correlation rises to `0.240` for TimesFM and `0.229` for Moirai with 7 days of history. This is why the project reports trajectory metrics in addition to MAE/RMSE.
 
+#### Sharp rise/drop audit
+
+To test the visually sharp movements directly, abrupt events are defined using a threshold calibrated **only from the observed pre-forecast contexts**. The primary q90 threshold is `|Δ speed| >= 6.25` over one 5-minute step. Forecast-period Ground Truth and model error are **not** used to choose this threshold, which avoids selecting events after seeing model failures. A stricter q95 threshold (`8.125`) is saved as a sensitivity check.
+
+The q90 rule identifies **19 future sharp events across 8 of the 10 executed 5-minute windows**.
+
+| Model | Normal-step MAE | Sharp-event MAE | Direction accuracy on sharp events | Mean abs forecast change | Mean abs Ground Truth change | Mean amplitude ratio |
+|---|---:|---:|---:|---:|---:|---:|
+| TimesFM 2.5 | 3.051 | 8.270 | 0.684 | 0.257 | 10.628 | 0.025 |
+| Moirai 2.0 | 3.101 | 7.538 | 0.526 | 0.446 | 10.628 | 0.039 |
+
+The models therefore sometimes get the **direction** of a sharp move right, especially TimesFM, but they strongly under-estimate its **magnitude**. On q90 sharp events, TimesFM's mean absolute predicted change is only about `2.5%` of the observed change magnitude and Moirai's is about `3.9%`. The q95 sensitivity check gives the same qualitative conclusion. These are observed benchmark transitions; this audit does not claim whether any individual jump is a physical traffic incident or a sensor artifact.
+
 ### Hourly
 
 ![Hourly Ground Truth vs Persistence vs foundation models](figures/experiment_outputs/hourly_forecast_comparison.png)
@@ -146,7 +160,7 @@ The paired quality filter leaves **5 origins**, one from each clock-time regime,
 
 The final PoC does not support a blanket “foundation models are better” statement. A more defensible result is:
 
-> **TimesFM shows consistent added value at the executed hourly scale, including against a strong previous-day seasonal baseline. Moirai's hourly advantage is more window-dependent. At 5-minute resolution, longer historical context improves error and some shape diagnostics, but does not fully solve high-frequency trajectory tracking.**
+> **TimesFM shows consistent added value at the executed hourly scale, including against a strong previous-day seasonal baseline. Moirai's hourly advantage is more window-dependent. At 5-minute resolution, longer historical context improves error and some shape diagnostics, but does not fully solve high-frequency trajectory tracking. The event-conditioned audit confirms that both models strongly under-react to the largest observed 5-minute changes.**
 
 The visually opposite short-term movements in some 5-minute segments are therefore consistent with the measured trajectory weakness; they should not be interpreted as evidence that MAE/RMSE alone proves good dynamics tracking.
 
@@ -157,6 +171,7 @@ The remaining 5-minute vs hourly gap is consistent with a role for temporal aggr
 - Saved predictions and evaluation outputs are committed under `results/`.
 - Scientific evaluation utilities are under `src/`.
 - Experiment/evaluation scripts are under `scripts/`.
+- The context-calibrated sharp-event audit is reproducible with `scripts/run_5min_sharp_event_analysis.py`; its summary, q90 event details, and protocol are committed under `results/sharp_events/`; the script also regenerates the diagnostic figure locally.
 - Raw `metr-la.h5` and pretrained checkpoints are intentionally not committed.
 
 ## Limitations
@@ -167,6 +182,7 @@ The remaining 5-minute vs hourly gap is consistent with a role for temporal aggr
 - The paired context ablation uses five regimes from a single day after data-quality filtering.
 - Weekly results are visual/exploratory because only two future points are available.
 - Cross-scale comparisons are descriptive because the forecasting tasks are not identical across resolutions.
+- Sharp-event labels identify unusually large observed benchmark transitions; they do not establish whether a jump is a real traffic incident, sensor noise, or another data-generation effect.
 - Results are descriptive; no statistical-significance/generalization claim is made.
 
 ## Sources

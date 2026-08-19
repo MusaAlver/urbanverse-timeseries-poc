@@ -1,0 +1,14 @@
+{
+  "sensor_id": "773062",
+  "scale": "5min",
+  "windows": 10,
+  "threshold_calibration": "pooled absolute one-step changes from prepared pre-forecast contexts only",
+  "q90_threshold": 6.25,
+  "q95_threshold": 8.125,
+  "q90_future_events": 19,
+  "q90_future_event_windows": 8,
+  "selection_uses_forecast_ground_truth": false,
+  "selection_uses_model_error": false,
+  "primary_descriptive_threshold": "q90",
+  "sensitivity_threshold": "q95"
+}
