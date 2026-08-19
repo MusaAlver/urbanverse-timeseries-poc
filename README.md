@@ -57,6 +57,14 @@ The observed series is resampled **before** inference at each scale. Five-minute
 
 Raw MAE should **not** be compared across scales as if they were the same forecasting task. The meaningful comparison is model vs baseline **within each scale**.
 
+### 5-minute
+
+![5-minute Ground Truth vs Persistence vs foundation models](figures/experiment_outputs/5min_forecast_comparison.png)
+
+### Hourly
+
+![Hourly Ground Truth vs Persistence vs foundation models](figures/experiment_outputs/hourly_forecast_comparison.png)
+
 ### Hourly with stronger baseline
 
 **Seasonal Naive (24h)** copies each forecast hour from the same hour one day earlier.
@@ -71,6 +79,20 @@ Raw MAE should **not** be compared across scales as if they were the same foreca
 TimesFM has about **47.5% lower mean MAE** than Seasonal Naive. Moirai has about **25.7% lower mean MAE**, but its advantage is less consistent across windows. TimesFM's largest gains over Seasonal Naive occur in the hourly windows where the seasonal baseline itself has the highest error; when the previous-day pattern is already captured well, the additional gain is much smaller.
 
 This remains a descriptive PoC result because the 9 hourly horizons overlap and are concentrated on 25–26 June 2012.
+
+![Hourly Ground Truth vs Persistence vs Seasonal Naive vs foundation models](figures/experiment_outputs/hourly_forecast_comparison_with_seasonal_naive.png)
+
+![Hourly mean MAE with Seasonal Naive](figures/experiment_outputs/hourly_mean_mae_with_seasonal_naive.png)
+
+### Daily
+
+![Daily Ground Truth vs Persistence vs foundation models](figures/experiment_outputs/daily_forecast_comparison.png)
+
+### Weekly — exploratory only
+
+Only two future points are available in the executed weekly window, so this figure is shown for completeness rather than model ranking.
+
+![Weekly visual exploratory comparison](figures/experiment_outputs/weekly_forecast_comparison.png)
 
 ## 3. Context-length control at fixed 5-minute resolution
 
@@ -88,6 +110,10 @@ The forecast origin, 5-minute resolution, and 24-step / 2-hour target are held f
 For TimesFM, mean MAE falls by about **24.4%** from 8 hours to 7 days. For Moirai, the best MAE occurs at **24 hours**; 7 days does not improve it further. The largest improvement generally appears once at least one full daily cycle is visible, but longer history does not fully solve high-frequency step-to-step tracking.
 
 The paired quality filter leaves **5 origins**, one from each clock-time regime, but all five are from **2012-06-27**. This control is therefore descriptive and single-day.
+
+![TimesFM context-length control](figures/experiment_outputs/timesfm_context_length_comparison.png)
+
+![Moirai context-length control](figures/experiment_outputs/moirai_context_length_comparison.png)
 
 ## Interpretation
 
